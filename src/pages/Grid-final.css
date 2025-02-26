@@ -1,0 +1,95 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.card-grid {
+  position: relative;
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
+  margin-top: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.grid-snap-guide {
+  position: absolute;
+  border: 2px dashed rgba(100, 149, 237, 0.7);
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Balatro-style card animations */
+@keyframes dealCard {
+  0% { 
+    transform: translate(50%, 150%) rotate(10deg) scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(0, 0) rotate(-2deg) scale(1.05);
+    opacity: 1;
+  }
+  75% {
+    transform: rotate(1deg) scale(0.98);
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@keyframes hoverCard {
+  0% { transform: translateY(0) scale(1) rotate(0); }
+  100% { transform: translateY(-10px) scale(1.1) rotate(1deg); }
+}
+
+@keyframes selectCard {
+  0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+  50% { transform: scale(1.15); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); }
+  100% { transform: scale(1.1); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
+}
+
+@keyframes shuffleCard {
+  0% { transform: rotate(0) translateY(0); }
+  25% { transform: rotate(-3deg) translateY(-30px); }
+  50% { transform: rotate(3deg) translateY(-15px); }
+  75% { transform: rotate(-2deg) translateY(-5px); }
+  100% { transform: rotate(0) translateY(0); }
+}
+
+@keyframes floatCard {
+  0% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-3px) rotate(0.3deg); }
+  100% { transform: translateY(0) rotate(0); }
+}

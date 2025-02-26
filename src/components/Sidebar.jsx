@@ -34,6 +34,14 @@ const Sidebar = () => {
               Grid V2 (Enhanced)
             </NavLink>
           </li>
+          <li>
+            <NavLink 
+              to="/grid-final" 
+              className={({ isActive }) => isActive ? 'active' : ''}
+            >
+              Grid Final
+            </NavLink>
+          </li>
         </ul>
       </nav>
       <div className="sidebar-footer">
