@@ -27,6 +27,26 @@ const TweetCard = ({
     renderPixelArt(canvas, tweet, isSelected);
     
   }, [tweet, isSelected]);
+
+  // Apply card dealing path animation
+useEffect(() => {
+  if (tweet.animationClass === 'card-dealing' && tweet.dealPath) {
+    const cardElement = document.querySelector(`#card-${tweet.id}`);
+    if (!cardElement) return;
+    
+    const { start, end, control1, control2 } = tweet.dealPath;
+    
+    // Set CSS custom properties for the bezier path animation
+    cardElement.style.setProperty('--deal-start-x', `${start.x}px`);
+    cardElement.style.setProperty('--deal-start-y', `${start.y}px`);
+    cardElement.style.setProperty('--deal-end-x', `${end.x}px`);
+    cardElement.style.setProperty('--deal-end-y', `${end.y}px`);
+    cardElement.style.setProperty('--deal-x1', `${control1.x}px`);
+    cardElement.style.setProperty('--deal-y1', `${control1.y}px`);
+    cardElement.style.setProperty('--deal-x2', `${control2.x}px`);
+    cardElement.style.setProperty('--deal-y2', `${control2.y}px`);
+  }
+}, [tweet.animationClass, tweet.dealPath]);
   
   // Determine animation class
   let animationClass = 'idle';
@@ -61,6 +81,7 @@ const TweetCard = ({
   // file: src/components/TweetCard.jsx (continued)
   return (
     <div
+      id={`card-${tweet.id}`}
       className={`tweet-card ${animationClass} ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''} ${isStacked ? 'stacked' : ''}`}
       style={{
         left: tweet.position.x,

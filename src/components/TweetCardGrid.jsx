@@ -840,16 +840,22 @@ const cascadeReorganize = (startCardId, emptyCell, targetCell) => {
   
 // file: src/components/TweetCardGrid.jsx (updated unstacking)
 
-// Handle click for unstacking cards with reverse animation
+// file: src/components/TweetCardGrid.jsx (corrected unstacking)
+
+// Handle click for unstacking cards with proper reverse animation
+// file: src/components/TweetCardGrid.jsx (refined card dealing)
+
+// Handle unstack with smooth dealer-like animation
 const handleUnstackClick = async () => {
   const stackedCards = tweets.filter(tweet => tweet.isStacked);
-  if (stackedCards.length < 2) return;
+  if (stackedCards.length < 2 || isStacking) return;
   
-  setIsStacking(true); // Reuse the isStacking state to prevent other actions
+  setIsStacking(true);
   
   // Play shuffle sound
   if (shuffleSoundRef.current) {
     shuffleSoundRef.current.currentTime = 0;
+    shuffleSoundRef.current.volume = 0.4;
     shuffleSoundRef.current.play();
   }
   
@@ -860,46 +866,92 @@ const handleUnstackClick = async () => {
     return; // Not enough space
   }
   
-  // Sort to ensure consistent placement
+  // Sort cells for a natural dealing pattern (left to right, top to bottom)
   const sortedCells = [...emptyCells].sort((a, b) => {
     const [aRow, aCol] = a.id.split('-').map(Number);
     const [bRow, bCol] = b.id.split('-').map(Number);
     return (aRow * config.cols + aCol) - (bRow * config.cols + bCol);
   });
   
-  // Prepare stacked cards for the reverse animation
-  // Mark them all with unstacking class first
+  // Sort stacked cards by their z-index (original stacking order)
+  const orderedStackedCards = [...stackedCards].sort((a, b) => a.zIndex - b.zIndex);
+  
+  // Get the position of the stack (for animation starting point)
+  const stackPosition = {
+    x: orderedStackedCards[0].position.x,
+    y: orderedStackedCards[0].position.y
+  };
+  
+  // First prepare the stack - a slight shuffle animation
   setTweets(prev => 
     prev.map(tweet => 
       tweet.isStacked
-        ? { ...tweet, animationClass: 'unstacking' }
+        ? { 
+            ...tweet, 
+            animationClass: 'shuffle-prepare',
+            // Ensure all stacked cards are perfectly aligned
+            position: {
+              x: stackPosition.x + (tweet.zIndex % 5) * 2, 
+              y: stackPosition.y + (tweet.zIndex % 5) * 2
+            }
+          }
         : tweet
     )
   );
   
-  // Allow time for the unstacking animation to start
-  await new Promise(resolve => setTimeout(resolve, 300));
+  // Wait for the shuffle-prepare animation
+  await new Promise(resolve => setTimeout(resolve, 400));
   
-  // Unstack cards in reverse order (last in, first out)
-  for (let i = stackedCards.length - 1; i >= 0; i--) {
-    const tweet = stackedCards[i];
+  // Deal cards with a smooth, professional card dealer motion
+  for (let i = 0; i < orderedStackedCards.length; i++) {
+    const tweet = orderedStackedCards[i];
     const targetCell = sortedCells[i];
     
-    // Play card deal sound
+    // Play card deal sound with slight variation
     if (dealSoundRef.current) {
       dealSoundRef.current.currentTime = 0;
+      dealSoundRef.current.volume = 0.2 + Math.random() * 0.1;
+      dealSoundRef.current.playbackRate = 0.9 + Math.random() * 0.2;
       dealSoundRef.current.play();
     }
     
+    // Calculate the card's path for a natural dealing arc
+    // Dealers typically deal in an arc from their position to the player's position
+    const startPos = { 
+      x: stackPosition.x + (tweet.zIndex % 5) * 2, 
+      y: stackPosition.y + (tweet.zIndex % 5) * 2
+    };
+    
+    const endPos = { ...targetCell.position };
+    
+    // Calculate control points for a bezier curve path
+    // This creates the natural arc of a card being dealt
+    const controlPoint1 = {
+      x: startPos.x + (endPos.x - startPos.x) * 0.3,
+      y: startPos.y - 40 - Math.random() * 20 // Slightly above the starting point
+    };
+    
+    const controlPoint2 = {
+      x: startPos.x + (endPos.x - startPos.x) * 0.7,
+      y: endPos.y - 20 - Math.random() * 10 // Slightly above the ending point
+    };
+    
+    // Set the card in dealing motion
     setTweets(prev => 
       prev.map(t => 
         t.id === tweet.id
           ? { 
-              ...t, 
-              position: { ...targetCell.position }, 
-              gridCell: targetCell.id,
-              animationClass: 'unstack-deal', // Special animation for dealing from stack
-              zIndex: 100 + (stackedCards.length - i),
+              ...t,
+              // Store path data for the animation
+              dealPath: {
+                start: startPos,
+                end: endPos,
+                control1: controlPoint1,
+                control2: controlPoint2
+              },
+              gridCell: targetCell.id, // Set the final destination
+              animationClass: 'card-dealing',
+              zIndex: 500 - i, // Maintain proper layering during animation
               isStacked: false
             }
           : t
@@ -915,17 +967,20 @@ const handleUnstackClick = async () => {
       )
     );
     
-    // Wait longer for the first few cards to create a nice cascade effect
-    const delay = i > stackedCards.length - 3 ? 250 : 150;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    // Short delay between dealing each card (professionals deal quickly)
+    await new Promise(resolve => setTimeout(resolve, 120));
   }
   
-  // Reset animation classes after animations complete
+  // Allow time for all dealing animations to complete
   setTimeout(() => {
+    // Reset all cards to their final positions
     setTweets(prev => 
       prev.map(tweet => ({ 
         ...tweet, 
         animationClass: null,
+        dealPath: null,
+        // Place each card exactly at its grid position
+        position: tweet.gridCell ? grid.find(cell => cell.id === tweet.gridCell)?.position || tweet.position : tweet.position,
         zIndex: tweet.gridCell ? parseInt(tweet.gridCell.split('-')[0]) * config.cols + 
                               parseInt(tweet.gridCell.split('-')[1]) + 1 : 1
       }))
