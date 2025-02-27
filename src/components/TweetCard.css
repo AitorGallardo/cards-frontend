@@ -1,137 +1,223 @@
+/* file: src/styles/TweetCard.css (updated) */
 .tweet-card {
-    position: absolute;
-    width: 240px;
-    height: 280px;
-    border-radius: 12px;
+  position: absolute;
+  width: 240px;
+  height: 280px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.3s;
+  cursor: pointer;
+  user-select: none;
+  background-color: #1A1A1A;
+  z-index: 1;
+  transform-origin: center bottom;
+  overflow: hidden;
+}
+
+/* Selection mode styling */
+.tweet-card.selection-mode {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tweet-card.selection-mode:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tweet-card.selected {
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.5);
+}
+
+/* Selection indicator */
+.selection-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(26, 26, 26, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.selection-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.checkmark {
+  color: #4A90E2;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Animations */
+.tweet-card.deal {
+  animation: dealCard 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: var(--deal-index, 1);
+}
+
+.tweet-card.hover {
+  animation: hoverCard 0.25s forwards;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.tweet-card.dragging {
+  animation: selectCard 0.15s forwards;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.tweet-card.shuffle {
+  animation: shuffleCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 5;
+}
+
+.tweet-card.stack {
+  animation: stackCard 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 200;
+}
+
+.tweet-card.stacked {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.tweet-card.stacked:hover {
+  transform: translateY(-3px) rotate(1deg);
+}
+
+.tweet-card.float {
+  animation: floatCard 3s ease-in-out infinite alternate;
+}
+
+.tweet-card-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* Balatro-style card shadow */
+.card-shadow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -15px;
+  height: 15px;
+  background: rgba(0, 0, 0, 0.15);
+  filter: blur(10px);
+  border-radius: 50%;
+  z-index: -1;
+  transform-origin: center;
+  transition: all 0.3s;
+  opacity: 0.7;
+  width: 80%;
+  margin: 0 auto;
+}
+
+.tweet-card.selected .card-shadow {
+  background: rgba(74, 144, 226, 0.2);
+}
+
+.tweet-card.hover .card-shadow,
+.tweet-card.selection-mode:hover .card-shadow {
+  bottom: -20px;
+  opacity: 0.5;
+  width: 90%;
+  filter: blur(15px);
+}
+
+.tweet-card.dragging .card-shadow {
+  bottom: -25px;
+  opacity: 0.4;
+  width: 95%;
+  filter: blur(20px);
+}
+
+.tweet-card.stacked .card-shadow {
+  bottom: -8px;
+  opacity: 0.5;
+  width: 70%;
+}
+
+/* Balatro style light reflection */
+.card-reflection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Enhanced animations */
+@keyframes dealCard {
+  0% { 
+    transform: translate(50%, 150%) rotate(10deg) scale(0.5);
+    opacity: 0;
+    box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5);
+  }
+  60% {
+    transform: translate(0, 0) rotate(-2deg) scale(1.05);
+    opacity: 1;
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
+  }
+  75% {
+    transform: rotate(1deg) scale(0.98);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    transition: box-shadow 0.3s;
-    cursor: pointer;
-    user-select: none;
-    background-color: #1A1A1A;
-    z-index: 1;
-    transform-origin: center bottom;
-    overflow: hidden;
   }
-  
-  .tweet-card.deal {
-    animation: dealCard 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    z-index: var(--deal-index, 1);
+  100% {
+    transform: rotate(0) scale(1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   }
-  
-  .tweet-card.hover {
-    animation: hoverCard 0.25s forwards;
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
-    z-index: 10;
+}
+
+@keyframes hoverCard {
+  0% { transform: translateY(0) scale(1) rotate(0); }
+  100% { transform: translateY(-15px) scale(1.05) rotate(1deg); }
+}
+
+@keyframes selectCard {
+  0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+  50% { transform: scale(1.08); box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5); }
+  100% { transform: scale(1.05); box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4); }
+}
+
+@keyframes shuffleCard {
+  0% { transform: rotate(0) translateY(0); }
+  25% { transform: rotate(-3deg) translateY(-30px); }
+  50% { transform: rotate(3deg) translateY(-15px); }
+  75% { transform: rotate(-2deg) translateY(-5px); }
+  100% { transform: rotate(0) translateY(0); }
+}
+
+@keyframes stackCard {
+  0% { 
+    transform: translate(0, 0) rotate(0) scale(1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   }
-  
-  .tweet-card.dragging {
-    animation: selectCard 0.15s forwards;
-    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.5);
-    z-index: 100;
+  50% { 
+    transform: translate(0, -40px) rotate(-5deg) scale(1.1);
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
   }
-  
-  .tweet-card.shuffle {
-    animation: shuffleCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    z-index: 5;
+  100% { 
+    transform: translate(0, 0) rotate(0) scale(1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
   }
-  
-  .tweet-card.float {
-    animation: floatCard 3s ease-in-out infinite alternate;
-  }
-  
-  .tweet-card-canvas {
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-  }
-  
-  /* Balatro-style card shadow */
-  .card-shadow {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -15px;
-    height: 15px;
-    background: rgba(0, 0, 0, 0.15);
-    filter: blur(10px);
-    border-radius: 50%;
-    z-index: -1;
-    transform-origin: center;
-    transition: all 0.3s;
-    opacity: 0.7;
-    width: 80%;
-    margin: 0 auto;
-  }
-  
-  .tweet-card.hover .card-shadow {
-    bottom: -20px;
-    opacity: 0.5;
-    width: 90%;
-    filter: blur(15px);
-  }
-  
-  .tweet-card.dragging .card-shadow {
-    bottom: -25px;
-    opacity: 0.4;
-    width: 95%;
-    filter: blur(20px);
-  }
-  
-  /* Balatro style light reflection */
-  .card-reflection {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    pointer-events: none;
-    z-index: 2;
-  }
-  
-  /* Enhanced animations */
-  @keyframes dealCard {
-    0% { 
-      transform: translate(50%, 150%) rotate(10deg) scale(0.5);
-      opacity: 0;
-      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5);
-    }
-    60% {
-      transform: translate(0, 0) rotate(-2deg) scale(1.05);
-      opacity: 1;
-      box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4);
-    }
-    75% {
-      transform: rotate(1deg) scale(0.98);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-    100% {
-      transform: rotate(0) scale(1);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-  }
-  
-  @keyframes hoverCard {
-    0% { transform: translateY(0) scale(1) rotate(0); }
-    100% { transform: translateY(-15px) scale(1.05) rotate(1deg); }
-  }
-  
-  @keyframes selectCard {
-    0% { transform: scale(1); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
-    50% { transform: scale(1.08); box-shadow: 0 20px 30px rgba(0, 0, 0, 0.5); }
-    100% { transform: scale(1.05); box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4); }
-  }
-  
-  @keyframes shuffleCard {
-    0% { transform: rotate(0) translateY(0); }
-    25% { transform: rotate(-3deg) translateY(-30px); }
-    50% { transform: rotate(3deg) translateY(-15px); }
-    75% { transform: rotate(-2deg) translateY(-5px); }
-    100% { transform: rotate(0) translateY(0); }
-  }
-  
-  @keyframes floatCard {
-    0% { transform: translateY(0) rotate(0); }
-    50% { transform: translateY(-5px) rotate(0.5deg); }
-    100% { transform: translateY(0) rotate(0); }
-  }
+}
+
+@keyframes floatCard {
+  0% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-5px) rotate(0.5deg); }
+  100% { transform: translateY(0) rotate(0); }
+}

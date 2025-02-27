@@ -1,0 +1,68 @@
+/* file: src/styles/Controls.css */
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  
+  .control-button {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: none;
+    background-color: #2A2A2A;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    min-width: 140px;
+  }
+  
+  .control-button:hover:not(:disabled) {
+    background-color: #3A3A3A;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  }
+  
+  .control-button:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  .control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .control-button.active {
+    background-color: #4A90E2;
+    box-shadow: 0 2px 10px rgba(74, 144, 226, 0.4);
+  }
+  
+  .stack-button {
+    background-color: #5cb85c;
+  }
+  
+  .stack-button:hover:not(:disabled) {
+    background-color: #4cae4c;
+  }
+  
+  .unstack-button {
+    background-color: #f0ad4e;
+  }
+  
+  .unstack-button:hover:not(:disabled) {
+    background-color: #eea236;
+  }
+  
+  /* Selection mode cursor */
+  .card-grid.selection-mode {
+    cursor: pointer;
+  }
+  
+  .grid-snap-guide {
+    border-color: rgba(74, 144, 226, 0.7);
+    transition: all 0.2s;
+  }
