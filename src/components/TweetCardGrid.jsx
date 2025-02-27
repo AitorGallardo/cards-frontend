@@ -247,31 +247,61 @@ const TweetCardGrid = () => {
     }
   };
   
-  const handleMouseUp = () => {
-    if (!draggingCard) return;
+// file: src/components/TweetCardGrid.jsx (updated reorganization logic)
+
+// Function to handle card dropping and reorganization
+const handleMouseUp = () => {
+  if (!draggingCard) return;
+  
+  const tweet = tweets.find(t => t.id === draggingCard);
+  if (!tweet) {
+    setDraggingCard(null);
+    setSnapGuide(null);
+    return;
+  }
+  
+  // Find nearest grid cell
+  const nearestCell = findNearestCell(tweet.position.x, tweet.position.y);
+  
+  if (nearestCell) {
+    // Get the source cell this card was dragged from
+    const sourceCell = tweet.sourceCell;
+    const targetCell = nearestCell.id;
     
-    const tweet = tweets.find(t => t.id === draggingCard);
-    if (!tweet) {
-      setDraggingCard(null);
-      setSnapGuide(null);
-      return;
-    }
+    // Check if target cell is already occupied by another card
+    const occupiedBy = tweets.find(t => t.gridCell === targetCell && t.id !== draggingCard);
     
-    // Find nearest grid cell
-    const nearestCell = findNearestCell(tweet.position.x, tweet.position.y);
-    
-    if (nearestCell) {
+    if (occupiedBy) {
       // Play place sound
       if (placeSoundRef.current) {
         placeSoundRef.current.currentTime = 0;
         placeSoundRef.current.play();
       }
       
-      // Get the source cell this card was dragged from
-      const sourceCell = tweet.sourceCell;
-      const targetCell = nearestCell.id;
+      // Swap positions: place dragged card in target position
+      setTweets(prev => 
+        prev.map(t => {
+          if (t.id === draggingCard) {
+            // Dragged card goes to target position
+            return { 
+              ...t, 
+              position: { ...nearestCell.position }, 
+              gridCell: targetCell,
+              sourceCell: null,
+              animationClass: 'shuffle',
+              zIndex: 500
+            };
+          }
+          return t;
+        })
+      );
       
-      // Update the tweet with new position
+      // Now trigger cascade reorganization starting from the displaced card
+      setTimeout(() => {
+        cascadeReorganize(occupiedBy.id, sourceCell, targetCell);
+      }, 100);
+    } else {
+      // Target cell is empty, just place the card there
       setTweets(prev => 
         prev.map(t => 
           t.id === draggingCard
@@ -281,7 +311,6 @@ const TweetCardGrid = () => {
                 gridCell: targetCell,
                 sourceCell: null,
                 animationClass: 'shuffle',
-                // Keep higher z-index for a moment
                 zIndex: 500
               }
             : t
@@ -297,36 +326,153 @@ const TweetCardGrid = () => {
         )
       );
       
-      // Trigger grid reorganization with source and target cells
-      setTimeout(() => {
-        reorganizeGrid(sourceCell, targetCell);
-      }, 300);
-    } else {
-      // Return to original position if available
-      const originalCell = tweet.gridCell 
-        ? grid.find(cell => cell.id === tweet.gridCell)
-        : null;
-        
-      if (originalCell && !originalCell.occupied) {
-        setTweets(prev => 
-          prev.map(t => 
-            t.id === draggingCard
-              ? { 
-                  ...t, 
-                  position: { ...originalCell.position }, 
-                  gridCell: originalCell.id,
-                  sourceCell: null,
-                  animationClass: 'shuffle'
-                }
-              : t
-          )
-        );
+      // If we had a source cell and it's different from target, reorganize
+      if (sourceCell && sourceCell !== targetCell) {
+        setTimeout(() => {
+          reorganizeGrid(sourceCell);
+        }, 300);
       }
     }
-    
-    setDraggingCard(null);
-    setSnapGuide(null);
+  } else {
+    // Return to original position if available
+    const originalCell = tweet.gridCell 
+      ? grid.find(cell => cell.id === tweet.gridCell)
+      : null;
+      
+    if (originalCell) {
+      setTweets(prev => 
+        prev.map(t => 
+          t.id === draggingCard
+            ? { 
+                ...t, 
+                position: { ...originalCell.position }, 
+                gridCell: originalCell.id,
+                sourceCell: null,
+                animationClass: 'shuffle'
+              }
+            : t
+        )
+      );
+    }
+  }
+  
+  setDraggingCard(null);
+  setSnapGuide(null);
+};
+
+// Cascade reorganization - move all cards one position following a specific path
+const cascadeReorganize = (startCardId, emptyCell, targetCell) => {
+  // Play shuffle sound
+  if (shuffleSoundRef.current) {
+    shuffleSoundRef.current.currentTime = 0;
+    shuffleSoundRef.current.play();
+  }
+  
+  // Convert cell ids to row/col
+  const getRowCol = (cellId) => {
+    const [row, col] = cellId.split('-').map(Number);
+    return { row, col };
   };
+  
+  // Calculate the linear position of a cell (row * cols + col)
+  const getCellPosition = (cellId) => {
+    const { row, col } = getRowCol(cellId);
+    return row * config.cols + col;
+  };
+  
+  // Get all grid cells sorted by position
+  const sortedCells = [...grid].sort((a, b) => {
+    return getCellPosition(a.id) - getCellPosition(b.id);
+  });
+  
+  // Get all cards in the grid
+  const cardsInGrid = tweets.filter(t => t.gridCell !== null);
+  
+  // Find the displaced card and create a chain of movements
+  const displacedCard = tweets.find(t => t.id === startCardId);
+  if (!displacedCard || !emptyCell) return;
+  
+  // The first move is the displaced card to the empty cell
+  const moveChain = [{
+    tweetId: displacedCard.id,
+    fromCell: displacedCard.gridCell,
+    toCell: emptyCell
+  }];
+  
+  // Now we need to find subsequent cards to move
+  // Sort cards by their position in the grid
+  const sortedCards = [...cardsInGrid].sort((a, b) => {
+    if (!a.gridCell || !b.gridCell) return 0;
+    return getCellPosition(a.gridCell) - getCellPosition(b.gridCell);
+  });
+  
+  // Find index of the displaced card
+  const displacedIndex = sortedCards.findIndex(t => t.id === displacedCard.id);
+  
+  // For each subsequent card, move it to the position of the previous card
+  let currentFromCell = displacedCard.gridCell;
+  for (let i = displacedIndex + 1; i < sortedCards.length; i++) {
+    const nextCard = sortedCards[i];
+    
+    // Skip if this card doesn't have a grid position
+    if (!nextCard.gridCell) continue;
+    
+    // Create the move
+    moveChain.push({
+      tweetId: nextCard.id,
+      fromCell: nextCard.gridCell,
+      toCell: currentFromCell
+    });
+    
+    // Update the from cell for the next iteration
+    currentFromCell = nextCard.gridCell;
+  }
+  
+  // Execute the move chain with staggered timing
+  moveChain.forEach((move, index) => {
+    setTimeout(() => {
+      const targetCell = grid.find(cell => cell.id === move.toCell);
+      if (!targetCell) return;
+      
+      setTweets(prev => 
+        prev.map(tweet => 
+          tweet.id === move.tweetId
+            ? { 
+                ...tweet, 
+                position: { ...targetCell.position }, 
+                gridCell: move.toCell,
+                animationClass: 'shuffle',
+                zIndex: 100 + index
+              }
+            : tweet
+          )
+      );
+      
+      // Update grid occupancy
+      setGrid(prev => 
+        prev.map(cell => 
+          cell.id === move.toCell
+            ? { ...cell, occupied: true }
+            : cell.id === move.fromCell
+              ? { ...cell, occupied: false }
+              : cell
+        )
+      );
+    }, 100 + index * 50); // Stagger the animations
+  });
+  
+  // Reset animation classes after animations complete
+  setTimeout(() => {
+    setTweets(prev => 
+      prev.map(tweet => ({ 
+        ...tweet, 
+        animationClass: null,
+        // Reset z-index based on grid position
+        zIndex: tweet.gridCell ? getCellPosition(tweet.gridCell) + 1 : 1
+      }))
+    );
+  }, 100 + moveChain.length * 50 + 500);
+};
   
   // Find nearest grid cell (either empty or occupied)
   const findNearestCell = (x, y) => {
@@ -692,77 +838,101 @@ const TweetCardGrid = () => {
     });
   };
   
-  // Handle click for unstacking cards
-  const handleUnstackClick = () => {
-    const stackedCards = tweets.filter(tweet => tweet.isStacked);
-    if (stackedCards.length < 2) return;
+// file: src/components/TweetCardGrid.jsx (updated unstacking)
+
+// Handle click for unstacking cards with reverse animation
+const handleUnstackClick = async () => {
+  const stackedCards = tweets.filter(tweet => tweet.isStacked);
+  if (stackedCards.length < 2) return;
+  
+  setIsStacking(true); // Reuse the isStacking state to prevent other actions
+  
+  // Play shuffle sound
+  if (shuffleSoundRef.current) {
+    shuffleSoundRef.current.currentTime = 0;
+    shuffleSoundRef.current.play();
+  }
+  
+  // Find empty cells
+  const emptyCells = grid.filter(cell => !cell.occupied);
+  if (emptyCells.length < stackedCards.length) {
+    setIsStacking(false);
+    return; // Not enough space
+  }
+  
+  // Sort to ensure consistent placement
+  const sortedCells = [...emptyCells].sort((a, b) => {
+    const [aRow, aCol] = a.id.split('-').map(Number);
+    const [bRow, bCol] = b.id.split('-').map(Number);
+    return (aRow * config.cols + aCol) - (bRow * config.cols + bCol);
+  });
+  
+  // Prepare stacked cards for the reverse animation
+  // Mark them all with unstacking class first
+  setTweets(prev => 
+    prev.map(tweet => 
+      tweet.isStacked
+        ? { ...tweet, animationClass: 'unstacking' }
+        : tweet
+    )
+  );
+  
+  // Allow time for the unstacking animation to start
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Unstack cards in reverse order (last in, first out)
+  for (let i = stackedCards.length - 1; i >= 0; i--) {
+    const tweet = stackedCards[i];
+    const targetCell = sortedCells[i];
     
-    // Play shuffle sound
-    if (shuffleSoundRef.current) {
-      shuffleSoundRef.current.currentTime = 0;
-      shuffleSoundRef.current.play();
+    // Play card deal sound
+    if (dealSoundRef.current) {
+      dealSoundRef.current.currentTime = 0;
+      dealSoundRef.current.play();
     }
     
-    // Find empty cells
-    const emptyCells = grid.filter(cell => !cell.occupied);
-    if (emptyCells.length < stackedCards.length) return; // Not enough space
+    setTweets(prev => 
+      prev.map(t => 
+        t.id === tweet.id
+          ? { 
+              ...t, 
+              position: { ...targetCell.position }, 
+              gridCell: targetCell.id,
+              animationClass: 'unstack-deal', // Special animation for dealing from stack
+              zIndex: 100 + (stackedCards.length - i),
+              isStacked: false
+            }
+          : t
+      )
+    );
     
-    // Sort to ensure consistent placement
-    const sortedCells = [...emptyCells].sort((a, b) => {
-      const [aRow, aCol] = a.id.split('-').map(Number);
-      const [bRow, bCol] = b.id.split('-').map(Number);
-      return (aRow * config.cols + aCol) - (bRow * config.cols + bCol);
-    });
+    // Update grid occupancy
+    setGrid(prev => 
+      prev.map(cell => 
+        cell.id === targetCell.id
+          ? { ...cell, occupied: true }
+          : cell
+      )
+    );
     
-    // Deal cards to empty cells
-    stackedCards.forEach((tweet, index) => {
-      setTimeout(() => {
-        // Play card deal sound
-        if (dealSoundRef.current) {
-          dealSoundRef.current.currentTime = 0;
-          dealSoundRef.current.play();
-        }
-        
-        const targetCell = sortedCells[index];
-        
-        setTweets(prev => 
-          prev.map(t => 
-            t.id === tweet.id
-              ? { 
-                  ...t, 
-                  position: { ...targetCell.position }, 
-                  gridCell: targetCell.id,
-                  animationClass: 'deal',
-                  zIndex: 100 + index,
-                  isStacked: false
-                }
-              : t
-          )
-        );
-        
-        // Update grid occupancy
-        setGrid(prev => 
-          prev.map(cell => 
-            cell.id === targetCell.id
-              ? { ...cell, occupied: true }
-              : cell
-          )
-        );
-      }, 100 + index * 150);
-    });
-    
-    // Reset animation classes after animations complete
-    setTimeout(() => {
-      setTweets(prev => 
-        prev.map(tweet => ({ 
-          ...tweet, 
-          animationClass: null,
-          zIndex: tweet.gridCell ? parseInt(tweet.gridCell.split('-')[0]) * config.cols + 
-                                parseInt(tweet.gridCell.split('-')[1]) + 1 : 1
-        }))
-      );
-    }, 100 + stackedCards.length * 150 + 500);
-  };
+    // Wait longer for the first few cards to create a nice cascade effect
+    const delay = i > stackedCards.length - 3 ? 250 : 150;
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+  
+  // Reset animation classes after animations complete
+  setTimeout(() => {
+    setTweets(prev => 
+      prev.map(tweet => ({ 
+        ...tweet, 
+        animationClass: null,
+        zIndex: tweet.gridCell ? parseInt(tweet.gridCell.split('-')[0]) * config.cols + 
+                              parseInt(tweet.gridCell.split('-')[1]) + 1 : 1
+      }))
+    );
+    setIsStacking(false);
+  }, 800);
+};
   
   return (
     <>
