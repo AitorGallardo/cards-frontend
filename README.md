@@ -1,61 +1,109 @@
-# Tweet Pixel Art Generator
+# Pixel Art Tweet Grid
 
-A simple React application that generates pixel art representations of tweets using HTML Canvas.
+A React + Vite application that displays tweets as interactive pixel art cards in a grid layout with Balatro-style card animations.
 
-## Features
+## Project Overview
 
-- Real-time tweet visualization with pixel art styling
-- Editable tweet content, username, handle, and profile color
-- Responsive design that works on various screen sizes
+This project creates a grid of pixel art tweet cards that users can interact with in various ways:
+- Drag and drop cards to reorganize the grid
+- Select multiple cards and stack them into a deck
+- Unstack a deck to deal cards back to the grid like a professional card dealer
+- Enjoy smooth Balatro-inspired card animations
 
-## Getting Started
+![Pixel Art Tweet Grid Demo](./demo.gif)
 
-### Prerequisites
+## Key Features
 
-- Node.js (v14 or higher recommended)
-- npm or yarn
+### 1. Pixel Art Styling
+- Custom pixel art rendering for tweet cards
+- Pixelated profile pictures and decorative elements
+- Canvas-based rendering for high performance
 
-### Installation
+### 2. Interactive Card Grid
+- Drag and drop functionality
+- Smart grid reorganization
+- Card selection mode
+- Card stacking and unstacking
 
-1. Clone this repository
-```bash
-git clone https://github.com/yourusername/tweet-pixel-art.git
-cd tweet-pixel-art
+### 3. Balatro-Style Animations
+- Professional card dealing animations
+- Deck stacking/unstacking animations
+- Smooth hover and movement effects
+- Dynamic shadows and reflections
+
+### 4. Real-time Feedback
+- Visual guides when moving cards
+- Selection indicators
+- Animation and sound effects
+
+## Implementation Details
+
+### Grid Reorganization Logic
+The grid follows specific reorganization rules:
+- When a card is moved, its original position is left empty
+- When dropped on another card, the displaced card and all subsequent cards move forward one position
+- Cards follow a natural reading order (left-to-right, top-to-bottom)
+- No empty spaces are left after reorganization
+
+### Card Dealing Animation
+The card dealing animation is designed to mimic a professional card dealer:
+- Cards follow natural arcing paths using cubic bezier curves
+- Cards rotate realistically during flight
+- Each card has subtle variations for natural movement
+- Animation timing creates a satisfying dealing rhythm
+
+### Stacking/Unstacking
+- Cards stack with a satisfying animation
+- Unstacking deals cards back to the grid with professional dealing animation
+- Original stacking order is preserved during unstacking
+
+## Project Structure
+
+```
+tweet-pixel-art/
+├── index.html
+├── package.json
+├── vite.config.js
+├── src/
+│   ├── assets/
+│   │   ├── shuffle.mp3
+│   │   ├── deal.mp3
+│   │   └── place.mp3
+│   ├── components/
+│   │   ├── TweetCardGrid.jsx    # Main grid component with interaction logic
+│   │   ├── TweetCard.jsx        # Individual card component
+│   │   └── CardEffects.jsx      # Visual effects for cards
+│   ├── styles/
+│   │   ├── TweetCard.css        # Card styling and animations
+│   │   └── Controls.css         # Button styling
+│   ├── utils/
+│   │   ├── tweetUtils.js        # Tweet data generation
+│   │   └── pixelArtRenderer.js  # Canvas-based pixel art renderer
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
 ```
 
-2. Install dependencies
-```bash
-npm install
-```
+## Iteration History
 
-3. Start the development server
-```bash
-npm run dev
-```
+This project has gone through several iterations to improve:
+1. Initial implementation of pixel art cards with basic drag and drop
+2. Addition of grid management and card reorganization
+3. Implementation of card selection and stacking features
+4. Refinement of animations to match Balatro-style card handling
+5. Enhancement of unstacking to use professional card dealing motion
 
-4. Open your browser to the URL displayed in the terminal (usually http://localhost:5173)
+## Current Challenges
 
-## How It Works
+The main focus has been on perfecting:
+1. Natural card movement and animations
+2. Proper grid reorganization logic
+3. Professional card dealing during unstacking
 
-The app uses Canvas API to create a stylized, pixelated representation of a tweet. You can customize:
+## Next Steps
 
-- The username and handle
-- The profile color
-- The tweet content
-
-The canvas will update in real-time as you make changes to these fields.
-
-## Built With
-
-- [React](https://reactjs.org/) - Frontend library
-- [Vite](https://vitejs.dev/) - Build tool and development environment
-- HTML Canvas API - For pixel art generation
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Inspired by the pixel art aesthetic
-- Built using React and HTML Canvas
+Potential future enhancements:
+- Connecting to real tweet data via API
+- Adding more pixel art customization options
+- Implementing additional card interactions and animations
+- Supporting responsive layouts for different screen sizes
