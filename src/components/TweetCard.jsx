@@ -2,6 +2,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './TweetCard.css';
 import { renderPixelArt } from '../utils/pixelArtRenderer';
+import ShaderBackground from './ShaderBackground';
+import { useShader, SHADER_OPTIONS } from '../utils/ShaderContext';
 
 const TweetCard = ({ 
   tweet, 
@@ -17,6 +19,7 @@ const TweetCard = ({
 }) => {
   const canvasRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const { activeShader, shaderEnabled } = useShader();
   
   // Render pixel art on canvas
   useEffect(() => {
@@ -24,9 +27,9 @@ const TweetCard = ({
     if (!canvas) return;
     
     // Render the pixel art
-    renderPixelArt(canvas, tweet, isSelected);
+    renderPixelArt(canvas, tweet, isSelected, shaderEnabled);
     
-  }, [tweet, isSelected]);
+  }, [tweet, isSelected, shaderEnabled]);
 
   // Apply card dealing path animation
 useEffect(() => {
@@ -82,12 +85,14 @@ useEffect(() => {
   return (
     <div
       id={`card-${tweet.id}`}
-      className={`tweet-card ${animationClass} ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''} ${isStacked ? 'stacked' : ''}`}
+      className={`tweet-card ${animationClass} ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''} ${isStacked ? 'stacked' : ''} ${shaderEnabled ? 'shader-enabled' : ''}`}
       style={{
         left: tweet.position.x,
         top: tweet.position.y,
         animationDelay: isDealing ? `${dealDelay}ms` : '0ms',
-        zIndex: zIndex || 1
+        zIndex: zIndex || 1,
+        backgroundColor: shaderEnabled ? 'transparent' : '#1A1A1A',
+        position: 'absolute', // Ensure position is absolute
       }}
       onClick={onClick}
       onMouseDown={isSelectionMode ? null : onMouseDown}
@@ -95,11 +100,28 @@ useEffect(() => {
       onMouseLeave={() => setIsHovered(false)}
       onMouseMove={handleMouseMove}
     >
+      {/* Shader background - only show when enabled */}
+      {shaderEnabled && (
+        <div className="tweet-card-shader" style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          borderRadius: '12px',
+          overflow: 'hidden',
+          zIndex: 0
+        }}>
+          <ShaderBackground className="tweet-card-canvas with-shader" shaderType={activeShader} />
+        </div>
+      )}
+      
       <canvas 
         ref={canvasRef} 
         width="240" 
         height="280" 
-        className="tweet-card-canvas"
+        className={`tweet-card-canvas ${shaderEnabled ? 'with-shader' : ''}`}
+        style={{ position: 'relative', zIndex: 1 }}
       />
       
       {/* Light reflection effect (Balatro style) */}

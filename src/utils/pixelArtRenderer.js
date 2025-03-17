@@ -1,12 +1,16 @@
 // file: src/utils/pixelArtRenderer.js (updated)
-export const renderPixelArt = (canvas, tweet, isSelected = false) => {
+export const renderPixelArt = (canvas, tweet, isSelected = false, shaderEnabled = false) => {
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
     
-    // Clear canvas
-    ctx.fillStyle = '#1A1A1A';
-    ctx.fillRect(0, 0, width, height);
+    // Clear canvas - fully transparent if shader is enabled
+    if (shaderEnabled) {
+      ctx.clearRect(0, 0, width, height);
+    } else {
+      ctx.fillStyle = '#1A1A1A';
+      ctx.fillRect(0, 0, width, height);
+    }
     
     // Draw selection highlight if selected
     if (isSelected) {
@@ -21,13 +25,17 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
       ctx.shadowBlur = 0;
     }
     
-    // Draw card outline
-    ctx.strokeStyle = isSelected ? '#4A90E2' : '#333';
-    ctx.lineWidth = 2;
-    roundRect(ctx, 2, 2, width - 4, height - 4, 10, true, true);
+    // Draw card outline - only if shader is not enabled
+    if (!shaderEnabled) {
+      ctx.strokeStyle = isSelected ? '#4A90E2' : '#333';
+      ctx.lineWidth = 2;
+      roundRect(ctx, 2, 2, width - 4, height - 4, 10, false, true);
+    }
     
-    // Add pixel art noise texture (subtle)
-    addPixelNoise(ctx, width, height, 0.05);
+    // Add pixel art noise texture (subtle) - skip if shader is enabled
+    if (!shaderEnabled) {
+      addPixelNoise(ctx, width, height, 0.05);
+    }
     
     // Draw profile section
     ctx.fillStyle = tweet.profileColor;
@@ -38,30 +46,61 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
     // Draw profile picture (pixel art style)
     drawPixelatedFace(ctx, 30, 30, tweet.profileColor);
     
-    // Draw username
+    // Draw username with stronger contrast if shader is enabled
     ctx.fillStyle = '#FFFFFF';
+    if (shaderEnabled) {
+      // Add text shadow for better visibility with shader
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+    }
     ctx.font = '16px monospace';
     ctx.fillText(tweet.username, 90, 45);
     
     // Draw handle
     ctx.fillStyle = '#999999';
+    if (shaderEnabled) {
+      ctx.fillStyle = '#FFFFFF'; // Brighter color for better visibility with shader
+    }
     ctx.font = '14px monospace';
     ctx.fillText(tweet.handle, 90, 65);
     
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    
     // Draw separator
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = shaderEnabled ? '#FFFFFF' : '#333';
     ctx.beginPath();
     ctx.moveTo(20, 85);
     ctx.lineTo(width - 20, 85);
     ctx.stroke();
     
-    // Draw content
+    // Draw content with stronger contrast if shader is enabled
     ctx.fillStyle = '#FFFFFF';
+    if (shaderEnabled) {
+      // Add text shadow for better visibility with shader
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+    }
     ctx.font = '15px monospace';
-    wrapText(ctx, tweet.content, 20, 115, width - 40, 22);
+    wrapText(ctx, tweet.content, 20, 115, width - 40, 22, shaderEnabled);
     
-    // Add pixel art corner decorations
-    drawCornerPixels(ctx, width, height, isSelected ? '#4A90E2' : tweet.profileColor);
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    
+    // Add pixel art corner decorations - only if shader is not enabled
+    if (!shaderEnabled) {
+      drawCornerPixels(ctx, width, height, isSelected ? '#4A90E2' : tweet.profileColor);
+    }
   };
   
   // Rest of the implementation remains the same
@@ -208,7 +247,7 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
     };
     
     // Helper function for text wrapping
-    const wrapText = (ctx, text, x, y, maxWidth, lineHeight) => {
+    const wrapText = (ctx, text, x, y, maxWidth, lineHeight, shaderEnabled = false) => {
       const words = text.split(' ');
       let line = '';
       let testLine = '';
@@ -221,7 +260,7 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
         
         if (testWidth > maxWidth && n > 0) {
           // Add a bit of pixel-style randomness to the line
-          pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight));
+          pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight), shaderEnabled);
           line = words[n] + ' ';
           lineCount++;
           
@@ -230,7 +269,7 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
             if (n < words.length - 1) {
               line = line.slice(0, -1) + '...';
             }
-            pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight));
+            pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight), shaderEnabled);
             break;
           }
         } else {
@@ -240,26 +279,29 @@ export const renderPixelArt = (canvas, tweet, isSelected = false) => {
       
       // Print last line
       if (lineCount < 6) {
-        pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight));
+        pixelateText(ctx, line.trim(), x, y + (lineCount * lineHeight), shaderEnabled);
       }
     };
     
     // Add slight pixelation effect to text
-    const pixelateText = (ctx, text, x, y) => {
+    const pixelateText = (ctx, text, x, y, shaderEnabled = false) => {
       // Draw text normally first
       ctx.fillText(text, x, y);
       
       // Then add a few random pixel-style "artifacts" for effect
-      const textWidth = ctx.measureText(text).width;
-      const pixelSize = 2;
-      
-      for (let i = 0; i < textWidth / 20; i++) {
-        if (Math.random() < 0.3) {
-          const pixelX = x + Math.random() * textWidth;
-          const pixelY = y - 4 + Math.random() * 8;
-          
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-          ctx.fillRect(pixelX, pixelY, pixelSize, pixelSize);
+      // Skip extra artifacts if shader is enabled to keep text cleaner
+      if (!shaderEnabled) {
+        const textWidth = ctx.measureText(text).width;
+        const pixelSize = 2;
+        
+        for (let i = 0; i < textWidth / 20; i++) {
+          if (Math.random() < 0.3) {
+            const pixelX = x + Math.random() * textWidth;
+            const pixelY = y - 4 + Math.random() * 8;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillRect(pixelX, pixelY, pixelSize, pixelSize);
+          }
         }
       }
     };
